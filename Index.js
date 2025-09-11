@@ -1,5 +1,5 @@
 require('dotenv').config();
-const mongoose = require('mongoose');
+const mongoose = require('mongoose');  
 const app = require('./app');
 
 // Connect to Database
@@ -12,7 +12,9 @@ const connectDB = async () => {
     process.exit(1);
   }
 };
+ 
 
+// Start the server only after DB is connected
 const startServer = async () => {
   await connectDB();
   const PORT = process.env.PORT || 4000;
