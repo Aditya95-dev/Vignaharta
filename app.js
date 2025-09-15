@@ -23,6 +23,8 @@ app.use(express.static('public'));
 
 app.use('/api/user', require('./Routes/userRoutes/userRoutes'));
 app.use('/api/collection', require('./Routes/collectionRout/collectionRoute'));
+app.use('/api/loan', require('./Routes/loanRoute/loanRoutes'));
+
 
 
 
