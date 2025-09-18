@@ -3,9 +3,7 @@ const Loan = require('../../Models/loan/loan');
 exports.createLoan = async (req, res) => {
     try {
         const { loanHolderName, guarantorName, amount, interest, startDate, endDate, } = req.body;
-
-       
-
+     
         const loan = await Loan.create({
             loanHolderName,
             guarantorName,
@@ -14,6 +12,8 @@ exports.createLoan = async (req, res) => {
             startDate,
             endDate,
             status: 'active',
+            remainingAmount:amount
+            
         });
 
         res.status(201).json({

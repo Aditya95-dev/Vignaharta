@@ -36,15 +36,23 @@ const loanSchema = new mongoose.Schema(
             type: Number,
 
         },
+        remainingAmount: {
+            type: Number
+        }
     },
     { timestamps: true }
 );
 
-// 🔹 Auto-calculate recoveryAmount before saving
+
 loanSchema.pre('save', function (next) {
     const loan = this;
-    // Simple interest: amount + (amount * interest / 100)
-    loan.recoveryAmount = loan.amount + (loan.amount * (loan.interest || 0) / 100);
+
+    if (loan.isNew) {
+        loan.recoveryAmount = loan.amount + (loan.amount * (loan.interest || 0) / 100);
+        loan.remainingAmount = loan.recoveryAmount; 
+    }
+
     next();
 });
+
 module.exports = mongoose.model('Loan', loanSchema);

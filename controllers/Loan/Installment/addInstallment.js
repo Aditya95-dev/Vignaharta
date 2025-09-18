@@ -1,59 +1,61 @@
 const Installment = require("../../../Models/Installment/Installment")
 const Loan = require("../../../Models/loan/loan")
 
+
+
 exports.addInstallment = async (req, res) => {
     try {
-        const { loanHolderName, fk_loan, paymentDate, amount, status } = req.body
+        const { fk_loan, paymentDate, amount } = req.body;
 
-        if (!loanHolderName || !fk_loan || !amount) {
+        if (!fk_loan || !amount) {
             return res.status(400).json({
                 success: false,
-                message: "loanHolderName, fk_loan, and amount are required"
-            })
+                message: "fk_loan and amount are required"
+            });
         }
 
-        
-        const loan = await Loan.findById(fk_loan)
+        const loan = await Loan.findById(fk_loan);
         if (!loan) {
             return res.status(404).json({
                 success: false,
                 message: "Loan not found"
-            })
+            });
         }
 
-        if (loan.recoveryAmount < amount) {
+   
+        if (loan.remainingAmount < amount) {
             return res.status(400).json({
                 success: false,
-                message: `Installment exceeds remaining recovery amount. Remaining: ${loan.recoveryAmount}`
-            })
+                message: `Installment exceeds remaining loan amount. Remaining: ${loan.remainingAmount}`
+            });
         }
 
-    
+  
         const installment = new Installment({
-            loanHolderName,
             fk_loan,
             paymentDate,
             amount,
-            status: status || "pending"
-        })
-        await installment.save()
-
-    
-        loan.recoveryAmount -= amount
-        await loan.save()
+            status: "paid"
+        });
+        await installment.save();
+        const updatedLoan = await Loan.findByIdAndUpdate(
+            fk_loan,
+            { $inc: { remainingAmount: -amount } }, 
+            { new: true }
+        );
 
         res.status(201).json({
             success: true,
             message: "Installment added successfully",
             data: {
                 installment,
-                remainingRecoveryAmount: loan.recoveryAmount
+                remainingAmount: updatedLoan.remainingAmount
             }
-        })
+        });
     } catch (error) {
         res.status(500).json({
             success: false,
             message: error.message
-        })
+        });
     }
-}
+};
