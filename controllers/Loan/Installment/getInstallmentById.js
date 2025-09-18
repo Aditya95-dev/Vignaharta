@@ -4,8 +4,16 @@ exports.getInstallmentsByLoanId = async (req, res) => {
     try {
         const { loanId } = req.params;
 
-        const installments = await Installment.find({ fk_loan: loanId });
-        const loan =await Loan.findById({_id:loanId})
+        const installments = await Installment.find({ fk_loan: loanId })
+            .populate({
+                path: 'fk_loan',        
+                select: 'loanHolderName',
+                populate: {
+                    path: 'loanHolderName',  
+                    select: 'name'           
+                }
+            });
+        const loan = await Loan.findById({ _id: loanId })
 
         if (!installments || installments.length === 0) {
             return res.status(404).json({
