@@ -20,7 +20,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
 
-
+app.use('/api/get', require('./Routes/dashboardRoute/dashboardRoutes'))
 app.use('/api/user', require('./Routes/userRoutes/userRoutes'));
 app.use('/api/collection', require('./Routes/collectionRout/collectionRoute'));
 app.use('/api/loan', require('./Routes/loanRoute/loanRoutes'));
