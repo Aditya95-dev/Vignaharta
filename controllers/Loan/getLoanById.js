@@ -1,39 +1,47 @@
-const Loan = require('../../Models/loan/loan')
+
+const Loan = require('../../Models/loan/loan');
+const Installment = require('../../Models/Installment/Installment');
 
 exports.getLoanById = async (req, res) => {
     try {
-        const { id } = req.params
-        const loan = await Loan.findById(id)
+        const { id } = req.params;
+        const loan = await Loan.findById(id);
 
         if (!loan) {
             return res.status(404).json({
                 status: "failed",
                 success: false,
                 msg: "Loan not found"
-            })
+            });
         }
 
-        const startDate = new Date(loan.startDate)
-        const endDate = new Date(loan.endDate)
+        const installments = await Installment.find({ fk_loan: id }).sort({ createdAt: 1 });
 
-        // Calculate loan period in months
-        const totalMonths =
-            (endDate.getFullYear() - startDate.getFullYear()) * 12 +
-            (endDate.getMonth() - startDate.getMonth())
 
-        // EMI Calculation
-        const P = loan.amount
-        const annualRate = loan.interestRate || 0 // % per year
-        const r = annualRate / 12 / 100 // monthly rate
-        const n = totalMonths
+        const totalInstallmentsPaid = installments.length;
+        const remainingInstallments = loan.totalMonths - totalInstallmentsPaid;
 
-        let emi = 0
-        if (n > 0) {
-            if (r > 0) {
-                emi = (P * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1)
-            } else {
-                emi = P / n // if no interest
-            }
+
+        const totalPaidAmount = installments.reduce((sum, installment) => sum + installment.amount, 0);
+
+        const amortizationSchedule = [];
+        let currentBalance = loan.remainingAmount;
+        const monthlyRate = loan.interest / 100;
+
+        for (let i = 1; i <= remainingInstallments && currentBalance > 0; i++) {
+            const interestAmount = currentBalance * monthlyRate;
+            const principalAmount = loan.monthlyEMI - interestAmount;
+            const remainingBalance = currentBalance - principalAmount;
+
+            amortizationSchedule.push({
+                installmentNumber: totalInstallmentsPaid + i,
+                emi: loan.monthlyEMI,
+                principalAmount: Math.round(principalAmount),
+                interestAmount: Math.round(interestAmount),
+                remainingBalance: Math.round(Math.max(0, remainingBalance))
+            });
+
+            currentBalance = remainingBalance;
         }
 
         res.status(200).json({
@@ -41,15 +49,28 @@ exports.getLoanById = async (req, res) => {
             success: true,
             msg: "Data Fetch Successfully",
             data: {
-                loan,
-                totalInstallment: totalMonths,
-                monthlyInstallment: emi.toFixed(2)
+                loan: {
+                    ...loan.toObject(),
+                    totalInstallmentsPaid,
+                    remainingInstallments,
+                    totalPaidAmount
+                },
+                installmentHistory: installments,
+                upcomingSchedule: amortizationSchedule,
+                summary: {
+                    originalAmount: loan.amount,
+                    totalRecoveryAmount: loan.recoveryAmount,
+                    currentRemainingAmount: loan.remainingAmount,
+                    totalPaidAmount,
+                    currentMonthlyEMI: loan.monthlyEMI,
+                    interestRate: loan.interest + "% per month"
+                }
             }
-        })
+        });
 
     } catch (error) {
         res.status(500).json({
             message: error.message
-        })
+        });
     }
-}
+};

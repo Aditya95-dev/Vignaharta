@@ -3,7 +3,7 @@ const Loan = require('../../Models/loan/loan');
 
 exports.getLoanByUserId = async (req, res) => {
     try {
-        const { loanHolderName } = req.query; // Use req.query here
+        const { loanHolderName } = req.query; 
 
         if (!loanHolderName || !mongoose.Types.ObjectId.isValid(loanHolderName)) {
             return res.status(400).json({
