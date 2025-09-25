@@ -21,7 +21,7 @@ const collectionSchema = new mongoose.Schema({
 
     amount: {
         type: Number,
-        required: true
+        // required: true
     },
     totalAmount: {
         type: Number,
