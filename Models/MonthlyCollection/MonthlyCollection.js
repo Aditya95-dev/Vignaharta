@@ -18,18 +18,17 @@ const collectionSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
-
     amount: {
         type: Number,
-        // required: true
     },
     totalAmount: {
         type: Number,
     }
 
-}, { timestamps: true });
+},
+    { timestamps: true }
+);
 
-//🔹 Pre-save hook to increment totalAmount
 collectionSchema.pre('save', async function (next) {
     const collection = this;
 

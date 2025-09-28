@@ -1,57 +1,49 @@
-// const collection = require('../../Models/MonthlyCollection/MonthlyCollection');
-
-// // add collection
-// exports.addCollection = async (req, res) => {
-//     try {
-//         const { user, receivedate, month, year, amount } = req.body;
-//         const newCollection = new collection({
-//             user,
-//             receivedate,
-//             month,
-//             year,
-//             amount,
-
-//         });
-//         await newCollection.save();
-//         res.status(201).json({
-//             message: "Collection added successfully",
-//             success: true,
-//             status: 'success',
-//             data: newCollection
-//         });
-//     }
-//     catch (err) {
-//         res.status(500).json({ message: err.message });
-//     }
-// }
-
-
 const Collection = require('../../Models/MonthlyCollection/MonthlyCollection');
 
-// add collection (single or multiple)
+
 exports.addCollection = async (req, res) => {
     try {
         let collections = req.body;
 
-        // if a single object is sent, wrap it into an array
         if (!Array.isArray(collections)) {
             collections = [collections];
         }
 
-        // insert many collections
-        const newCollections = await Collection.insertMany(collections);
+        const bulkOps = collections.map(item => {
+            return {
+                updateOne: {
+                    filter: {
+                        user: item.user,
+                        month: item.month,
+                        year: item.year
+                    },
+                    update: { $set: item },
+                    upsert: true
+                }
+            };
+        });
 
-        res.status(201).json({
-            message: "Collection(s) added successfully",
+        await Collection.bulkWrite(bulkOps);
+
+        const updatedDocs = await Collection.find({
+            $or: collections.map(c => ({
+                user: c.user,
+                month: c.month,
+                year: c.year
+            }))
+        }).populate('user');
+
+        res.status(200).json({
+            message: "Collection(s) added/updated successfully",
             success: true,
-            status: 'success',
-            data: newCollections
+            status: "success",
+            data: updatedDocs
         });
     } catch (err) {
         res.status(500).json({
             message: err.message,
             success: false,
-            status: 'error'
+            status: "error"
         });
     }
 };
